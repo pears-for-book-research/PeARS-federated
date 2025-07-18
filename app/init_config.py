@@ -7,6 +7,8 @@ def run_config(app):
     load_dotenv()
     app.config['SINGLE_POD_INDEXING'] = getenv("SINGLE_POD_INDEXING", "false") == "true"
     app.config['SINGLE_POD_NAME'] = getenv("SINGLE_POD_NAME", "global")
+    app.config['LOCAL_FIRST_SEARCH'] = getenv("LOCAL_FIRST_SEARCH", "false") == "true"
+    app.config['LOCAL_FIRST_REMOTE_KEYWORD'] = getenv("LOCAL_FIRST_REMOTE_KEYWORD", "federated")
     app.config['MAIL_DEFAULT_SENDER'] = getenv("MAIL_DEFAULT_SENDER")
     app.config['MAIL_SERVER'] = getenv("MAIL_SERVER")
     app.config['MAIL_PORT'] = getenv("MAIL_PORT")

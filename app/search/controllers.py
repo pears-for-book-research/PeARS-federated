@@ -42,7 +42,16 @@ def index():
             shuffle(messages)
             internal_message = messages[0].text
 
-        if "!here" in query.split():
+
+        # check settings for showing only local vs. also remote results
+        if not app.config["LOCAL_FIRST_SEARCH"] and "!here" in query.split():
+            show_only_local_results = True
+        elif app.config["LOCAL_FIRST_SEARCH"] and not f"!{app.config['LOCAL_FIRST_REMOTE_KEYWORD']}" in query.split():
+            show_only_local_results = True
+        else:
+            show_only_local_results = False
+
+        if show_only_local_results:
             clean_query, results = get_local_search_results(query)
         else:
             clean_query, results = get_search_results(query)
@@ -63,9 +72,14 @@ def index():
         if internal_message:
             internal_message = internal_message.text
 
-    return render_template("search/index.html", internal_message=internal_message, \
-            placeholder=placeholder, searchform=searchform)
-
+    return render_template(
+        "search/index.html", 
+        internal_message=internal_message,
+        placeholder=placeholder, 
+        searchform=searchform,
+        local_first_search=app.config["LOCAL_FIRST_SEARCH"],
+        local_first_remote_keyword=app.config["LOCAL_FIRST_REMOTE_KEYWORD"]
+    )
 
 
 def prepare_gui_results(query, results):
