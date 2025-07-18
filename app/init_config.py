@@ -5,11 +5,13 @@ def run_config(app):
     app.config.from_object('config')
 
     load_dotenv()
+    app.config['SINGLE_POD_INDEXING'] = getenv("SINGLE_POD_INDEXING", "false") == "true"
+    app.config['SINGLE_POD_NAME'] = getenv("SINGLE_POD_NAME", "global")
     app.config['MAIL_DEFAULT_SENDER'] = getenv("MAIL_DEFAULT_SENDER")
     app.config['MAIL_SERVER'] = getenv("MAIL_SERVER")
     app.config['MAIL_PORT'] = getenv("MAIL_PORT")
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = True
     app.config['MAIL_DEBUG'] = False
     app.config['MAIL_USERNAME'] = getenv("EMAIL_USER")
     app.config['MAIL_PASSWORD'] = getenv("EMAIL_PASSWORD")
