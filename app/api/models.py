@@ -107,6 +107,7 @@ class Urls(Base):
     url = db.Column(db.String(1000))
     title = db.Column(db.String(1000))
     snippet = db.Column(db.String(1000))
+    extended_snippet = db.Column(db.String(1000))
     doctype = db.Column(db.String(1000))
     vector = db.Column(db.Integer)
     pod = db.Column(db.String(1000))
@@ -119,6 +120,7 @@ class Urls(Base):
                  url=None,
                  title=None,
                  snippet=None,
+                 extended_snippet=None,
                  doctype=None,
                  vector=None,
                  pod=None,
@@ -129,6 +131,7 @@ class Urls(Base):
         self.url = url
         self.title = title
         self.snippet = snippet
+        self.extended_snippet = extended_snippet
         self.doctype = doctype
         self.vector = vector
         self.pod = pod
@@ -147,6 +150,7 @@ class Urls(Base):
             'url': self.url,
             'title': self.title,
             'snippet': self.snippet,
+            'extended_snippet': 'extended_snippet',
             'doctype': self.doctype,
             'vector': self.vector,
             'pod': self.pod,

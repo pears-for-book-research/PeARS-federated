@@ -420,14 +420,14 @@ def run_indexer_url(url, theme, note, contributor, host_url):
         except:
             messages.append(gettext('ERROR: Content type could not be retrieved from header.'))
             return indexed, messages, share_url
-        success, text, lang, title, snippet, idv, mgs = \
+        success, text, lang, title, snippet, extended_snippet, idv, mgs = \
                 mk_page_vector.compute_vector(url, theme, contributor, url_type)
         if success:
             create_pod_in_db(contributor, theme, lang)
             #posix_doc(text, idx, contributor, lang, theme)
             share_url = join(host_url,'api', 'get?url='+url)
             create_or_replace_url_in_db(\
-                    url, title, idv, snippet, theme, lang, note, share_url, contributor, 'url')
+                    url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'url')
             indexed = True
         else:
             messages.extend(mgs)
@@ -447,13 +447,13 @@ def run_indexer_manual(url, title, doc, theme, lang, note, contributor, host_url
     messages = []
     indexed = False
     create_pod_npz_pos(contributor, theme, lang)
-    success, text, snippet, idv = mk_page_vector.compute_vector_local_docs(\
+    success, text, snippet, extended_snippet, idv = mk_page_vector.compute_vector_local_docs(\
             title, doc, theme, lang, contributor)
     share_url = join(host_url,'api', 'get?url='+url)
     if success:
         create_pod_in_db(contributor, theme, lang)
         #posix_doc(text, idx, contributor, lang, theme)
-        create_or_replace_url_in_db(url, title, idv, snippet, theme, lang, note, share_url, contributor, 'doc')
+        create_or_replace_url_in_db(url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'doc')
         indexed = True
     else:
         messages.append(gettext("There was a problem indexing your entry. Please check the submitted data."))
@@ -471,13 +471,13 @@ def index_doc_from_cli(title, doc, theme, lang, contributor, url, note, host_url
     if u:
         return False #URL exists already
     create_pod_npz_pos(contributor, theme, lang)
-    success, text, snippet, idv = \
+    success, text, snippet, extended_snippet, idv = \
             mk_page_vector.compute_vector_local_docs(title, doc, theme, lang, contributor)
     if success:
         create_pod_in_db(contributor, theme, lang)
         share_url = join(host_url,'api', 'get?url='+url)
         create_or_replace_url_in_db(\
-                url, title, idv, snippet, theme, lang, note, share_url, contributor, 'url')
+                url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'url')
         return True
     else:
         return False

@@ -56,10 +56,15 @@ def extract_txt(url, contributor):
     title = ""
     body_str = ""
     snippet = ""
+    extended_snippet = ""
     cc = False
     language = app.config['LANGS'][0]
     error = None
     snippet_length = app.config['SNIPPET_LENGTH']
+    if app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"]:
+        extended_snippet_length = app.config['EXTENDED_SNIPPET_LENGTH']
+    else:
+        extended_snippet_length = snippet_length
     local_pdf_path = join(app_dir_path, 'userdata', contributor+'.'+url.split('/')[-1])
     try:
         req = requests.get(url, allow_redirects=True, timeout=30)
@@ -68,7 +73,7 @@ def extract_txt(url, contributor):
             f_out.write(req.content)
     except Exception:
         print("ERROR accessing resource", url, "...")
-        return title, body_str, language, snippet, cc, error
+        return title, body_str, language, snippet, extended_snippet, cc, error
     
     try:
         body_str, title = pdf_mine(local_pdf_path)
@@ -80,7 +85,7 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, cc, error
+        return title, body_str, language, snippet, extended_snippet, cc, error
 
     if title == "":
         title = url.split('/')[-1]
@@ -95,7 +100,7 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, cc, error
+        return title, body_str, language, snippet, extended_snippet, cc, error
 
     if language not in installed_languages:
         error = "ERROR extract_html: language is not supported."
@@ -105,11 +110,12 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, cc, error
+        return title, body_str, language, snippet, extended_snippet, cc, error
     snippet = ' '.join(body_str.split()[:snippet_length])
+    extended_snippet = ' '.join(body_str.split()[:extended_snippet_length])
     remove(local_pdf_path)
     try:
         remove(local_pdf_path.replace('.pdf','.txt'))
     except:
         pass
-    return title, body_str, language, snippet, cc, error
+    return title, body_str, language, snippet, extended_snippet, cc, error
