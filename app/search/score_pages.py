@@ -230,7 +230,7 @@ def run_search(query, lang, extended=True):
     if extended:
         extended_document_scores = compute_scores(query, extended_q_vectors, lang)
 
-    # Merge
+    # Merge extended results
     merged_scores = document_scores.copy()
     for k,_ in extended_document_scores.items():
         if k in document_scores:
@@ -238,10 +238,33 @@ def run_search(query, lang, extended=True):
         else:
             merged_scores[k] = 0.5*extended_document_scores[k]
 
-    best_urls, scores = return_best_urls(merged_scores)
+    # if posix is enabled, search for best pods and perform posix search on those pods
+    if app.config["ENABLE_POSIX"]:
+        posix_best_urls = {}
+        best_pods = score_pods(q_vectors, extended_q_vectors, lang, max_pods=10)
+        for pod in best_pods:
+            theme, lang_and_user = pod.split(".l.")
+            _, user = pod.split(".u.")
+            posix = load_posix(user, lang, theme)
+            posix_best_doc_ids = intersect_best_posix_lists(q_tokenized, posix, lang)
+            for doc_id, posix_score in posix_best_doc_ids.items():
+                doc_url = db.session.query(Urls).filter_by(pod=pod, vector=doc_id).first()
+                posix_best_urls[doc_url.url] = posix_score
+
+        # Merge posix & vector results
+        combined_urls = set(merged_scores.keys()).union(set(posix_best_urls.keys()))
+        combined_vector_and_posix_scores = {}
+        for url in combined_urls:
+            mean_score = (posix_best_urls.get(url, 0.0) + merged_scores.get(url, 0.0)) / 2
+            combined_vector_and_posix_scores[url] = mean_score
+
+        best_urls, scores = return_best_urls(combined_vector_and_posix_scores)
+
+    else:
+        best_urls, scores = return_best_urls(merged_scores)
+
     results = output(best_urls, scores)
     return results, scores
-
 
 
 
@@ -270,7 +293,7 @@ def intersect_best_posix_lists(query_tokenized, posindex, lang):
 
 
 @timer
-def score_pods(query_words, query_vectors, extended_q_vectors, lang):
+def score_pods(query_vectors, extended_q_vectors, lang, max_pods=3):
     """Score pods for a query.
 
     Parameters:
@@ -282,11 +305,10 @@ def score_pods(query_words, query_vectors, extended_q_vectors, lang):
     """
     print(">> SEARCH: SCORE PAGES: SCORE PODS")
 
-    max_pods = app.config["MAX_PODS"] # How many pods to return
     pod_scores = {}
 
-    m, bins, podnames = load_vec_matrix(lang)
-    if not m:
+    m, bins, podnames, urls = load_vec_matrix(lang)
+    if m is None:
         return {}
 
     tmp_best_pods = []
@@ -319,10 +341,12 @@ def score_pods(query_words, query_vectors, extended_q_vectors, lang):
         tmp_best_scores.append(best_scores)
 
     best_pods = {}
+    best_pods_urls = {}
     maximums = np.ones((1,len(query_vectors)))
     scores = np.zeros((1,len(query_vectors)))
     for p in range(len(podnames)):
         podname = podnames[p]
+        pod_urls = urls[p]
         for i, arr in enumerate(tmp_best_pods):
             score = tmp_best_scores[i][tmp_best_pods[i].index(p)] if p in tmp_best_pods[i] else 0
             scores[0][i] = score
