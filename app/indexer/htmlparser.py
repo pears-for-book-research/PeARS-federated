@@ -136,11 +136,11 @@ def extract_html(url):
                     body_str = remove_boilerplates(req, language)
                 else:
                     if og_description:
-                        body_str = ' '.join(og_description['content'].split()[:100])+' '
+                        body_str = ' '.join(og_description['content'].split()[:10_000])+' '
                     body_str+=tmp_body_str
             except:
                 if og_description:
-                    body_str = ' '.join(og_description['content'].split()[:100])+' '
+                    body_str = ' '.join(og_description['content'].split()[:10_000])+' '
                 body_str+=tmp_body_str
             body_str = remove_emails(body_str)
             logging.debug(body_str[:500])
@@ -160,9 +160,7 @@ def extract_html(url):
             else:
                 snippet = ' '.join(body_str.split()[:snippet_length])
             
-            # For extended snippet: choose og or body_str depending on length
-            if og_description and (len(og_description['content'].split()) >= extended_snippet_length or len(og_description['content']) > len(body_str.split())):
-                extended_snippet = og_description['content'][:1000]
-            else:
-                extended_snippet = ' '.join(body_str.split()[:extended_snippet_length])
+            # For extended snippet: get large chunk of full body text
+            extended_snippet = body_str[:5000]
+
     return title, body_str, language, snippet, extended_snippet, cc, error
