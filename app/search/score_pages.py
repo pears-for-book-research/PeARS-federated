@@ -245,7 +245,7 @@ def run_search(query, lang, extended=True):
         for pod in best_pods:
             theme, lang_and_user = pod.split(".l.")
             _, user = pod.split(".u.")
-            posix = load_posix(user, lang, theme)
+            posix = load_posix(user, lang, theme, use_cached=False)
             posix_best_doc_ids = intersect_best_posix_lists(q_tokenized, posix, lang)
             for doc_id, posix_score in posix_best_doc_ids.items():
                 doc_url = db.session.query(Urls).filter_by(pod=pod, vector=doc_id).first()
@@ -315,7 +315,7 @@ def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100)
     if any([i is None for i in query_vocab_ids]):
         query_vocab_ids = [i for i in query_vocab_ids if i is not None]
     
-    posix = load_posix(user, lang, theme)
+    posix = load_posix(user, lang, theme, use_cached=True)
     
     spans = []
 
@@ -325,6 +325,9 @@ def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100)
         doc_positions = [int(pos_str) for pos_str in posix[vid].get(idv, "").split("|") if pos_str != ""]
         for pos in doc_positions:
             pos_to_wp[int(pos)] = inverted_vocab[vid]
+    if not pos_to_wp:
+        logging.warning(f"Posindex for pod {pod} vector {idv} url {url} seems to be empty")
+        return None
     doc_length = max(pos_to_wp.keys()) 
 
     for wp, vocab_id in zip(query_tokenized, query_vocab_ids):

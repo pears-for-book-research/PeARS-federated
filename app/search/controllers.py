@@ -132,7 +132,10 @@ def prepare_gui_results(query, results):
             and app.config["POSIX_EXTENDED_SNIPPETS"]
         ):
             posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["EXTENDED_SNIPPET_LENGTH"])
-            r['snippet'] = beautify_snippet(posix_extended_snippet, query)
+            if posix_extended_snippet is not None:
+                r['snippet'] = beautify_snippet(posix_extended_snippet, query)
+            else:
+                r['snippet'] = beautify_snippet(r['snippet'], query)
         else:
             r['snippet'] = beautify_snippet(r['snippet'], query)
 

@@ -10,10 +10,10 @@ pod_dir = getenv("PODS_DIR", join(dir_path, 'pods'))
 # cache posix so we don't have to reload every time
 posix_cache = {}
 
-def load_posix(contributor, lang, theme):
+def load_posix(contributor, lang, theme, use_cached=True):
     posix_path = join(pod_dir, contributor, lang)
     pod_name = theme+'.l.'+lang+'.u.'+contributor
-    if pod_name in posix_cache:
+    if use_cached and pod_name in posix_cache:
         return posix_cache[pod_name]
 
     posix = joblib.load(join(posix_path,pod_name+'.pos'))
