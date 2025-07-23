@@ -96,7 +96,7 @@ def prepare_gui_results(query, results):
         else:
             r["display_url"] = url
         r['title'] = ' '.join(r['title'].split()[:10])
-        r['snippet'] = beautify_snippet(r['snippet'], query)
+        
         logging.debug(f"RESULT URL {url}")
         if r['notes'] == 'None':
             r['notes'] = None
@@ -122,6 +122,19 @@ def prepare_gui_results(query, results):
             else:
                 _instance_info_text = gettext("This result originates from the remote PeARS instance \"{}\" ({}), which is maintained by {}.")
                 r["instance_info_text"] = _instance_info_text.format(r["instance"], r["x_instance_info"]["url"], instance_organization_text)
+
+        # fancy posix-based snippets
+        if (
+            r['instance_is_local']
+            and query != ""  # exclude results via /api/get
+            and current_user.is_authenticated 
+            and app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] 
+            and app.config["POSIX_EXTENDED_SNIPPETS"]
+        ):
+            posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["EXTENDED_SNIPPET_LENGTH"])
+            r['snippet'] = beautify_snippet(posix_extended_snippet, query)
+        else:
+            r['snippet'] = beautify_snippet(r['snippet'], query)
 
         displayresults.append(r)
     return displayresults

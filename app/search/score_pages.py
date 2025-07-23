@@ -23,7 +23,7 @@ from app.api.models import Urls
 from app.search.overlap_calculation import (snippet_overlap,
         score_url_overlap, posix, posix_no_seq)
 from app.utils import parse_query, timer
-from app.indexer.mk_page_vector import compute_query_vectors
+from app.indexer.mk_page_vector import compute_query_vectors, tokenize_text
 from app.indexer.posix import load_posix
 
 dir_path = dirname(dirname(realpath(__file__)))
@@ -290,6 +290,92 @@ def intersect_best_posix_lists(query_tokenized, posindex, lang):
         best_docs[d] = docscore
     logging.info(f"BEST DOCS FROM POS INDEX: {best_docs}")
     return best_docs
+
+def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100):
+    snippet = []
+    
+    theme, lang_and_user = pod.split(".l.")
+    lang, user = lang_and_user.split(".u.")
+    
+    idv = int(idv)
+
+    query_tokenized = []
+    for w in query.split():
+        query_tokenized.extend(tokenize_text(w, lang, stringify=False))
+
+    vocab = models[lang]['vocab']
+    inverted_vocab = models[lang]['inverted_vocab']
+    query_vocab_ids = [vocab.get(wp) for wp in query_tokenized]
+    if any([i is None for i in query_vocab_ids]):
+        query_vocab_ids = [i for i in query_vocab_ids if i is not None]
+    
+    posix = load_posix(user, lang, theme)
+    
+    spans = []
+
+    # reconstruct the original document so we can fill in the snippets beyond
+    pos_to_wp = {}
+    for vid in range(len(vocab)):
+        doc_positions = [int(pos_str) for pos_str in posix[vid].get(idv, "").split("|") if pos_str != ""]
+        for pos in doc_positions:
+            pos_to_wp[int(pos)] = inverted_vocab[vid]
+    doc_length = max(pos_to_wp.keys()) 
+
+    for wp, vocab_id in zip(query_tokenized, query_vocab_ids):
+        
+        # all of the positions of this wp in the doc
+        positions = [int(pos) for pos in posix[vocab_id].get(idv, "").split("|") if pos]
+
+        # check if the position is adjacent to any of the existing spans
+        for span_idx in range(len(spans)):
+
+            span_start, span_end = spans[span_idx]
+
+            for pos in positions:
+                # attach to the span if it follows directly after the previous token
+                if pos - 1 == span_end:
+                    spans[span_idx] = (span_start, pos)
+                    break
+                    
+        # start-of-word token not yet included in existing spans: start new spans
+        if wp.startswith("▁"):
+            for pos in positions:
+                in_existing_span = False
+                for (span_start, span_end) in spans:
+                    if pos in range(span_start, span_end+1):
+                        in_existing_span = True
+                        break
+                if not in_existing_span:
+                    spans.append((pos, pos))
+
+    # add a window of context to the spans, merge spans if needed
+    extended_spans = []
+    for span_idx in range(len(spans)):        
+        span_start, span_end = spans[span_idx]
+        
+        overlaps_with_existing_span = False
+        for xspan_id in range(len(extended_spans)):
+            xspan_start, xspan_end = extended_spans[xspan_id]
+            if span_start in range(xspan_start, xspan_end+1) or span_end in range(xspan_start, xspan_end+1):
+                overlaps_with_existing_span = True
+                extended_spans[xspan_id] = min(xspan_start, span_start), max(xspan_end, span_end)
+                break
+
+        if not overlaps_with_existing_span:
+            xspan_start = max(0, span_start - context)
+            xspan_end = min(doc_length, span_end + context)
+            extended_spans.append((xspan_start, xspan_end))  
+
+    for span_start, span_end in extended_spans:
+        span_txt = []
+        for i in range(span_start, span_end+1):
+            span_txt.append(pos_to_wp.get(i, " "))
+        snippet.append("".join(span_txt).replace("▁", " ").lstrip())
+    snippet_str = " ... ".join(snippet)
+    snippet_capped = " ".join(snippet_str.split()[:max_length])
+    if not snippet_capped.endswith("..."):
+        return snippet_capped + "..."
+    return snippet_capped
 
 
 @timer
