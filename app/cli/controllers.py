@@ -25,7 +25,7 @@ from app.indexer.access import request_url
 from app.indexer.posix import load_posix
 from app.indexer.htmlparser import extract_links
 from app.orchard.mk_urls_file import get_reindexable_pod_for_admin
-from app import db, User, Urls, Pods, VEC_SIZE
+from app import app, db, User, Urls, Pods, VEC_SIZE
 
 pears = Blueprint('pears', __name__)
 
@@ -267,8 +267,11 @@ def index_wiki(folder, regex, lang, contributor, host_url):
             url = ""
             title = ""
             doc = ""
-            theme = filepath.split('/')[-2]
-            theme = theme.replace('_',' ')
+            if app.config["SINGLE_POD_INDEXING"]:
+                theme = app.config["SINGLE_POD_NAME"]
+            else:
+                theme = filepath.split('/')[-2]
+                theme = theme.replace('_',' ')
             for l in fin:
                 l=l.rstrip('\n')
                 if l[:4] == "<doc":

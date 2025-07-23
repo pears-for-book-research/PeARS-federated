@@ -477,6 +477,8 @@ def index_doc_from_cli(title, doc, theme, lang, contributor, url, note, host_url
             mk_page_vector.compute_vector_local_docs(title, doc, theme, lang, contributor)
     if success:
         create_pod_in_db(contributor, theme, lang)
+        if app.config["ENABLE_POSIX"]:
+            posix_doc(text, idv, contributor, lang, theme)
         share_url = join(host_url,'api', 'get?url='+url)
         create_or_replace_url_in_db(\
                 url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'url')
