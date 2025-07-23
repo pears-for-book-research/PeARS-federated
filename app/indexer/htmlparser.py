@@ -100,10 +100,6 @@ def extract_html(url):
     language = app.config['LANGS'][0]
     error = None
     snippet_length = app.config['SNIPPET_LENGTH']
-    if app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"]:
-        extended_snippet_length = app.config['EXTENDED_SNIPPET_LENGTH']
-    else:
-        extended_snippet_length = snippet_length
 
     bs_obj, req = BS_parse(url)
     if not bs_obj:
