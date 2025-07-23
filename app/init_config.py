@@ -11,6 +11,9 @@ def run_config(app):
     app.config['LOCAL_FIRST_REMOTE_KEYWORD'] = getenv("LOCAL_FIRST_REMOTE_KEYWORD", "federated")
     app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] = getenv("EXTENDED_SNIPPETS_WHEN_LOGGED_IN", "false") == "true"
     app.config["EXTENDED_SNIPPET_LENGTH"] = int(getenv("EXTENDED_SNIPPET_LENGTH", 50))
+    app.config["ENABLE_POSIX"] = getenv("ENABLE_POSIX", "false") == "true"
+    app.config["POSIX_EXTENDED_SNIPPETS"] = getenv("POSIX_EXTENDED_SNIPPETS", "false") == "true"
+
     app.config['MAIL_DEFAULT_SENDER'] = getenv("MAIL_DEFAULT_SENDER")
     app.config['MAIL_SERVER'] = getenv("MAIL_SERVER")
     app.config['MAIL_PORT'] = getenv("MAIL_PORT")

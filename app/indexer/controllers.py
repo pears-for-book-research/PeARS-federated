@@ -424,7 +424,8 @@ def run_indexer_url(url, theme, note, contributor, host_url):
                 mk_page_vector.compute_vector(url, theme, contributor, url_type)
         if success:
             create_pod_in_db(contributor, theme, lang)
-            #posix_doc(text, idx, contributor, lang, theme)
+            if app.config["ENABLE_POSIX"]:
+                posix_doc(text, idv, contributor, lang, theme)
             share_url = join(host_url,'api', 'get?url='+url)
             create_or_replace_url_in_db(\
                     url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'url')
@@ -452,7 +453,8 @@ def run_indexer_manual(url, title, doc, theme, lang, note, contributor, host_url
     share_url = join(host_url,'api', 'get?url='+url)
     if success:
         create_pod_in_db(contributor, theme, lang)
-        #posix_doc(text, idx, contributor, lang, theme)
+        if app.config["ENABLE_POSIX"]:
+            posix_doc(text, idv, contributor, lang, theme)
         create_or_replace_url_in_db(url, title, idv, snippet, extended_snippet, theme, lang, note, share_url, contributor, 'doc')
         indexed = True
     else:

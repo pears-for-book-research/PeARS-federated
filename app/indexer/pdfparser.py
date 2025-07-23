@@ -61,10 +61,6 @@ def extract_txt(url, contributor):
     language = app.config['LANGS'][0]
     error = None
     snippet_length = app.config['SNIPPET_LENGTH']
-    if app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"]:
-        extended_snippet_length = app.config['EXTENDED_SNIPPET_LENGTH']
-    else:
-        extended_snippet_length = snippet_length
     local_pdf_path = join(app_dir_path, 'userdata', contributor+'.'+url.split('/')[-1])
     try:
         req = requests.get(url, allow_redirects=True, timeout=30)
@@ -112,7 +108,7 @@ def extract_txt(url, contributor):
             pass
         return title, body_str, language, snippet, extended_snippet, cc, error
     snippet = ' '.join(body_str.split()[:snippet_length])
-    extended_snippet = ' '.join(body_str.split()[:extended_snippet_length])
+    extended_snippet = body_str[:5000]
     remove(local_pdf_path)
     try:
         remove(local_pdf_path.replace('.pdf','.txt'))
