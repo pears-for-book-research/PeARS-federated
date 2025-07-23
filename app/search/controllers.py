@@ -86,7 +86,7 @@ def prepare_gui_results(query, results):
     if results is None or len(results) == 0:
         return None
     displayresults = []
-    for url, r in results.items():
+    for res_id, (url, r) in enumerate(results.items()):
 
         # display version of URL: should be clickable
         # (for pearslocal URLs: "/api/get?url=pearslocal..."; for other URLs: identical to the actual URL)
@@ -125,7 +125,8 @@ def prepare_gui_results(query, results):
 
         # fancy posix-based snippets
         if (
-            r['instance_is_local']
+            res_id < 10  # only do this for the first 20 results
+            and r['instance_is_local']
             and query != ""  # exclude results via /api/get
             and current_user.is_authenticated 
             and app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] 
