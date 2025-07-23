@@ -249,6 +249,9 @@ def run_search(query, lang, extended=True):
             posix_best_doc_ids = intersect_best_posix_lists(q_tokenized, posix, lang)
             for doc_id, posix_score in posix_best_doc_ids.items():
                 doc_url = db.session.query(Urls).filter_by(pod=pod, vector=doc_id).first()
+                if not doc_url:
+                    logging.warning(f"Could not find URL in DB for pod {pod} vector {doc_id}")
+                    continue
                 posix_best_urls[doc_url.url] = posix_score
 
         # Merge posix & vector results
