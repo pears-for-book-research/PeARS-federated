@@ -7,16 +7,25 @@ from app import models
 dir_path = dirname(dirname(realpath(__file__)))
 pod_dir = getenv("PODS_DIR", join(dir_path, 'pods'))
 
+# cache posix so we don't have to reload every time
+posix_cache = {}
+
 def load_posix(contributor, lang, theme):
     posix_path = join(pod_dir, contributor, lang)
     pod_name = theme+'.l.'+lang+'.u.'+contributor
+    if pod_name in posix_cache:
+        return posix_cache[pod_name]
+
     posix = joblib.load(join(posix_path,pod_name+'.pos'))
+    posix_cache[pod_name] = posix
+
     return posix
 
 def dump_posix(posindex, contributor, lang, theme):
     posix_path = join(pod_dir, contributor, lang)
     pod_name = theme+'.l.'+lang+'.u.'+contributor
     joblib.dump(posindex, join(posix_path,pod_name+'.pos'))
+    posix_cache[pod_name] = posindex
 
 def posix_doc(text, doc_id, contributor, lang, theme):
     pod_name = theme+'.l.'+lang+'.u.'+contributor

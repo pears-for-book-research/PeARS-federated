@@ -291,7 +291,10 @@ def intersect_best_posix_lists(query_tokenized, posindex, lang):
     logging.info(f"BEST DOCS FROM POS INDEX: {best_docs}")
     return best_docs
 
+@timer
 def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100):
+    print("\t\t", url)
+    
     snippet = []
     
     theme, lang_and_user = pod.split(".l.")
