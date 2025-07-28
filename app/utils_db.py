@@ -174,7 +174,7 @@ def delete_url_representations(url):
 
     #Remove doc from positional index
     try:
-        rm_doc_from_pos(u.id, pod)
+        rm_doc_from_pos(u.vector, pod)
     except:
         logging.debug(f">> UTILS_DB: delete_url_representations: could not remove vector from pos file.")
 
@@ -246,6 +246,27 @@ def rm_doc_from_pos(vid, pod):
         deleted_posindex.append(tmp_deleted)
     dump_posix(remaining_posindex, contributor, lang, theme)
     return deleted_posindex
+
+
+def reinsert_doc_in_pos(doc_posindex, new_vid, new_pod):
+    """ (re)insert wordpieces removed with rm_doc_from_pos into another pod's posindex 
+    Arguments:
+    doc_posindex: positional index for one specific document
+    new_vid: the ID of the vector recording the wordpieces
+    new_pod: the name of the pod
+
+    Returns: the content of the positional index for that vector.
+    """
+    contributor, theme, lang = parse_pod_name(new_pod)
+    vocab = models[lang]['vocab']
+    posindex = load_posix(contributor, lang, theme)
+    
+    for token in vocab:
+        token_id = vocab[token]
+        for old_vid, posidx in doc_posindex[token_id].items():
+            posindex[token_id][new_vid] = posidx
+    dump_posix(posindex, contributor, lang, theme)
+
 
 ##########
 # Renaming

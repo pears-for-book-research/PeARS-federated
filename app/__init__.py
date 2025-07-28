@@ -212,7 +212,8 @@ def check_sitename_and_hostname():
 from flask_admin.contrib.sqla import ModelView
 from app.api.models import Pods, Urls, User, Personalization, Suggestions, RejectedSuggestions
 from app.utils_db import delete_url_representations, delete_pod_representations, \
-        rm_from_npz, add_to_npz, create_pod_in_db, create_pod_npz_pos, rm_doc_from_pos, update_db_idvs_after_npz_delete
+        rm_from_npz, add_to_npz, create_pod_in_db, create_pod_npz_pos, rm_doc_from_pos, reinsert_doc_in_pos, update_db_idvs_after_npz_delete
+from app.indexer.posix import posix_doc
 
 from flask_admin import expose
 from flask_admin.contrib.sqla.view import ModelView
@@ -333,15 +334,16 @@ class UrlsModelView(ModelView):
             # model is now committed to the database
             if old_pod != new_pod:
                 print(f"Pod name has changed from {old_pod} to {new_pod}!")
-                print("Move vector in npz file")
                 try:
+                    print("Move vector in npz file")
                     pod_path = create_pod_npz_pos(contributor, new_theme, lang)
                     create_pod_in_db(contributor, new_theme, lang)
                     idv, v = rm_from_npz(model.vector, old_pod)
                     update_db_idvs_after_npz_delete(idv, old_pod)
-                    add_to_npz(v, pod_path+'.npz')
-                    #Removing from pos but not re-adding since current version does not make use of positional index. To fix.
-                    rm_doc_from_pos(model.id, old_pod)
+                    new_idv = add_to_npz(v, pod_path+'.npz')
+                    print("Move pos to new pos file")
+                    deleted_pos = rm_doc_from_pos(model.vector, old_pod)
+                    reinsert_doc_in_pos(deleted_pos, new_idv, new_pod)
                     self.session.commit()
                     #If pod empty, delete
                     if len(db.session.query(Urls).filter_by(pod=old_pod).all()) == 0:
