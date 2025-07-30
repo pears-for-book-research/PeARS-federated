@@ -52,10 +52,10 @@ def index():
             show_only_local_results = False
 
         if show_only_local_results:
-            clean_query, results = get_local_search_results(query)
+            clean_query, results, tokenized_query = get_local_search_results(query)
         else:
-            clean_query, results = get_search_results(query)
-        displayresults = prepare_gui_results(clean_query, results)
+            clean_query, results, tokenized_query = get_search_results(query)
+        displayresults = prepare_gui_results(clean_query, results, tokenized_query=tokenized_query)
         return render_template('search/results.html', query=query, results=displayresults, \
                 internal_message=internal_message, searchform=searchform)
 
@@ -82,7 +82,7 @@ def index():
     )
 
 
-def prepare_gui_results(query, results):
+def prepare_gui_results(query, results, tokenized_query=None):
     if results is None or len(results) == 0:
         return None
     displayresults = []
@@ -131,7 +131,7 @@ def prepare_gui_results(query, results):
             and current_user.is_authenticated 
             and app.config["POSIX_EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] 
         ):
-            posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["POSIX_EXTENDED_SNIPPET_LENGTH"])
+            posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["POSIX_EXTENDED_SNIPPET_LENGTH"], tokenized_query=tokenized_query)
             if posix_extended_snippet is not None:
                 r['snippet'] = beautify_snippet(posix_extended_snippet, query)
             else:
@@ -147,6 +147,7 @@ def get_local_search_results(query):
     clean_query = ""
     results = {}
     scores = []
+    tokenized_query = {}
     query, _, lang = parse_query(query.lower())
     if lang is None:
         languages = app.config['LANGS']
@@ -159,7 +160,8 @@ def get_local_search_results(query):
         print(">>>>>>>>>>>>>>>>>>>>>>")
 
         print("\n Getting results on this instance")
-        r, s = score_pages.run_search(clean_query, lang, extended=app.config['EXTEND_QUERY'])
+        r, s, lang_tokenized_query = score_pages.run_search(clean_query, lang, extended=app.config['EXTEND_QUERY'])
+        tokenized_query[lang] = lang_tokenized_query
         for res in r.values():
             res["instance"] = app.config["SITENAME"]  # to distinguish local results from remote ones later on
         if any(_r for _r in r if _r in results):
@@ -172,7 +174,7 @@ def get_local_search_results(query):
         url = list(results.keys())[i]
         sorted_results[url] = results[url]
     logging.debug(f"SORTED LOCAL RESULTS: {sorted_results}")
-    return clean_query, sorted_results
+    return clean_query, sorted_results, tokenized_query
 
 
 def get_search_results(query):
@@ -180,6 +182,7 @@ def get_search_results(query):
     clean_query = ""
     results = {}
     scores = []
+    tokenized_query = {}
     query, _, lang = parse_query(query.lower())
     if lang is None:
         languages = app.config['LANGS']
@@ -193,7 +196,8 @@ def get_search_results(query):
 
         try:
             print("\n Getting results on this instance")
-            r, s = score_pages.run_search(clean_query, lang, extended=app.config['EXTEND_QUERY'])
+            r, s, lang_tokenized_query = score_pages.run_search(clean_query, lang, extended=app.config['EXTEND_QUERY'])
+            tokenized_query[lang] = lang_tokenized_query
             for res in r.values():
                 res["instance"] = app.config["SITENAME"]  # to distinguish local results from remote ones later on
             if any(_r for _r in r if _r in results):
@@ -218,6 +222,6 @@ def get_search_results(query):
         url = list(results.keys())[i]
         sorted_results[url] = results[url]
     logging.debug(f"SORTED RESULTS: {sorted_results}")
-    return clean_query, sorted_results
+    return clean_query, sorted_results, tokenized_query
 
 

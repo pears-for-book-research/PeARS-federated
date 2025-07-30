@@ -54,7 +54,7 @@ def return_query_results():
     """Returns the results for a query in a json format.
     For use by other PeARS instances."""
     query = request.args.get('q')
-    _, results = get_local_search_results(query)
+    _, results, _ = get_local_search_results(query)
     return jsonify(json_list=results)
 
 @api.route('/urls/')

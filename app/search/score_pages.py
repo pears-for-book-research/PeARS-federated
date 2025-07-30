@@ -249,7 +249,7 @@ def run_search(query, lang, extended=True):
         best_urls, scores = return_best_urls(merged_scores)
 
     results = output(best_urls, scores)
-    return results, scores
+    return results, scores, q_tokenized
 
 
 
@@ -276,42 +276,49 @@ def intersect_best_posix_lists(query_tokenized, posindex, lang):
     logging.info(f"BEST DOCS FROM POS INDEX: {best_docs}")
     return best_docs
 
-@timer
-def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100):
-    print("\t\t", url)
-    
-    snippet = []
-    
-    theme, lang_and_user = pod.split(".l.")
-    lang, user = lang_and_user.split(".u.")
-    
-    idv = int(idv)
 
-    query_tokenized = []
-    for w in query.split():
-        query_tokenized.extend(tokenize_text(w, lang, stringify=False))
+#### for making posix-based snippets
 
-    vocab = models[lang]['vocab']
-    inverted_vocab = models[lang]['inverted_vocab']
-    query_vocab_ids = [vocab.get(wp) for wp in query_tokenized]
-    if any([i is None for i in query_vocab_ids]):
-        query_vocab_ids = [i for i in query_vocab_ids if i is not None]
-    
-    posix = load_posix(user, lang, theme, use_cached=True)
-    
-    spans = []
-
-    # reconstruct the original document so we can fill in the snippets beyond
+# map positions to wordpieces
+def _get_pos_to_wp_map(extended_spans, vocab, inverted_vocab, posix, idv):
     pos_to_wp = {}
-    for vid in range(len(vocab)):
-        doc_positions = [int(pos_str) for pos_str in posix[vid].get(idv, "").split("|") if pos_str != ""]
-        for pos in doc_positions:
-            pos_to_wp[int(pos)] = inverted_vocab[vid]
-    if not pos_to_wp:
-        logging.warning(f"Posindex for pod {pod} vector {idv} url {url} seems to be empty")
-        return None
-    doc_length = max(pos_to_wp.keys()) 
+    target_pos = set()
+    for span_start, span_end in extended_spans:
+        target_pos.update(range(span_start, span_end))
 
+    for vid in range(len(vocab)):
+        if not target_pos:
+            break
+        doc_positions = {
+            int(pos_str) 
+            for pos_str in posix[vid].get(idv, "").split("|") 
+            if pos_str != ""
+        }
+        for pos in doc_positions.intersection(target_pos):
+            pos_to_wp[pos] = inverted_vocab[vid]
+            target_pos.remove(pos)
+    return pos_to_wp
+
+@timer
+def _make_snippet_str(extended_spans, vocab, inverted_vocab, posix, idv, max_length):
+    pos_to_wp = _get_pos_to_wp_map(extended_spans, vocab, inverted_vocab, posix, idv)
+    
+    snippet_str = ""
+    for span_start, span_end in extended_spans:
+        span_txt = []
+        for i in range(span_start, span_end+1):
+            wp = pos_to_wp.get(i, "")
+            span_txt.append(wp)
+        snippet_str += "".join(span_txt).replace("▁", " ").lstrip() + " ... "
+        if len(snippet_str.split()) > max_length:
+            snippet_capped = " ".join(snippet_str.split()[:max_length])
+            if not snippet_capped.endswith("..."):
+                return snippet_capped + "..."
+    return snippet_str
+
+
+def _find_query_wp_positions(query_tokenized, query_vocab_ids, posix, idv):
+    spans = []
     for wp, vocab_id in zip(query_tokenized, query_vocab_ids):
         
         # all of the positions of this wp in the doc
@@ -338,10 +345,14 @@ def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100)
                         break
                 if not in_existing_span:
                     spans.append((pos, pos))
+    return spans
 
+def _add_context_window_to_spans(spans, context, max_spans):
     # add a window of context to the spans, merge spans if needed
     extended_spans = []
-    for span_idx in range(len(spans)):        
+    for span_idx in range(len(spans)):
+        if len(extended_spans) >= max_spans:
+            break        
         span_start, span_end = spans[span_idx]
         
         overlaps_with_existing_span = False
@@ -354,19 +365,38 @@ def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100)
 
         if not overlaps_with_existing_span:
             xspan_start = max(0, span_start - context)
-            xspan_end = min(doc_length, span_end + context)
+            xspan_end = span_end + context
             extended_spans.append((xspan_start, xspan_end))  
+    return extended_spans
 
-    for span_start, span_end in extended_spans:
-        span_txt = []
-        for i in range(span_start, span_end+1):
-            span_txt.append(pos_to_wp.get(i, " "))
-        snippet.append("".join(span_txt).replace("▁", " ").lstrip())
-    snippet_str = " ... ".join(snippet)
-    snippet_capped = " ".join(snippet_str.split()[:max_length])
-    if not snippet_capped.endswith("..."):
-        return snippet_capped + "..."
-    return snippet_capped
+@timer
+def make_posix_extended_snippet(query, url, idv, pod, context=4, max_length=100, max_spans=10, tokenized_query=None):
+    print("\t\t", url)
+        
+    theme, lang_and_user = pod.split(".l.")
+    lang, user = lang_and_user.split(".u.")
+    
+    idv = int(idv)
+
+    # if we were passed a tokenization: flatten it
+    if lang in tokenized_query:
+        lang_tokenized_query = [wp for word in tokenized_query[lang] for wp in word]
+    else:
+        lang_query_tokenized = []
+        for w in query.split():
+            lang_query_tokenized.extend(tokenize_text(w, lang, stringify=False))
+
+    vocab = models[lang]['vocab']
+    inverted_vocab = models[lang]['inverted_vocab']
+    query_vocab_ids = [vocab.get(wp) for wp in lang_tokenized_query]
+    if any([i is None for i in query_vocab_ids]):
+        query_vocab_ids = [i for i in query_vocab_ids if i is not None]
+    
+    posix = load_posix(user, lang, theme, use_cached=True)
+    
+    spans = _find_query_wp_positions(lang_tokenized_query, query_vocab_ids, posix, idv)
+    extended_spans = _add_context_window_to_spans(spans, context, max_spans)
+    return _make_snippet_str(extended_spans, vocab, inverted_vocab, posix, idv, max_length)
 
 
 @timer
