@@ -129,10 +129,9 @@ def prepare_gui_results(query, results):
             and r['instance_is_local']
             and query != ""  # exclude results via /api/get
             and current_user.is_authenticated 
-            and app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] 
-            and app.config["POSIX_EXTENDED_SNIPPETS"]
+            and app.config["POSIX_EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] 
         ):
-            posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["EXTENDED_SNIPPET_LENGTH"])
+            posix_extended_snippet = score_pages.make_posix_extended_snippet(query, url, r['vector'], r['pod'], max_length=app.config["POSIX_EXTENDED_SNIPPET_LENGTH"])
             if posix_extended_snippet is not None:
                 r['snippet'] = beautify_snippet(posix_extended_snippet, query)
             else:

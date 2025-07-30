@@ -107,13 +107,7 @@ def load_vec_matrix(lang):
 
 @timer
 def compute_scores(query, query_vectors, lang):
-    # extended snippets or not? 
-    if app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] and current_user.is_authenticated:
-        use_extended_snippets = True
-        snippet_length = app.config['EXTENDED_SNIPPET_LENGTH']
-    else:
-        use_extended_snippets = False
-        snippet_length = app.config['SNIPPET_LENGTH']
+    snippet_length = app.config['SNIPPET_LENGTH']
     m, bins, podnames, urls = load_vec_matrix(lang)
     if m is None:
         return {}
@@ -138,10 +132,7 @@ def compute_scores(query, query_vectors, lang):
 
     snippet_scores = {}
     for u in us:
-        if use_extended_snippets:
-            snippet = u.extended_snippet
-        else:
-            snippet = u.snippet
+        snippet = u.snippet
 
         if snippet is None:
             snippet = ''
@@ -190,13 +181,7 @@ def return_best_urls(doc_scores):
 
 
 def output(best_urls, scores):
-    # extended snippets or not? 
-    if app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] and current_user.is_authenticated:
-        use_extended_snippets = True
-        snippet_length = app.config['EXTENDED_SNIPPET_LENGTH']
-    else:
-        use_extended_snippets = False
-        snippet_length = app.config['SNIPPET_LENGTH']
+    snippet_length = app.config['SNIPPET_LENGTH']
     results = {}
     urls = Urls.query.filter(Urls.url.in_(best_urls)).all()
     urls = [next(u for u in urls if u.url == best_url) for best_url in best_urls]
@@ -205,10 +190,7 @@ def output(best_urls, scores):
         results[url] = u.as_dict()
         results[url]['score'] = scores[i]
         if not url.startswith('pearslocal'):
-            if use_extended_snippets:
-                results[url]['snippet'] = ' '.join(results[url]['extended_snippet'].split()[:snippet_length])
-            else:
-                results[url]['snippet'] = ' '.join(results[url]['snippet'].split()[:snippet_length])
+            results[url]['snippet'] = ' '.join(results[url]['snippet'].split()[:snippet_length])
     return results
 
 

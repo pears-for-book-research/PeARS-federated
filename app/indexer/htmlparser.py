@@ -95,7 +95,6 @@ def extract_html(url):
     title = ""
     body_str = ""
     snippet = ""
-    extended_snippet = ""
     cc = False
     language = app.config['LANGS'][0]
     error = None
@@ -104,7 +103,7 @@ def extract_html(url):
     bs_obj, req = BS_parse(url)
     if not bs_obj:
         error = "\t>> ERROR: extract_html: Failed to get BeautifulSoup object."
-        return title, body_str, language, snippet, extended_snippet, cc, error
+        return title, body_str, language, snippet, cc, error
     if hasattr(bs_obj.title, 'string'):
         if url.startswith('http'):
             og_title = bs_obj.find("meta", property="og:title")
@@ -146,7 +145,7 @@ def extract_html(url):
             except Exception:
                 title = ""
                 error = "\t>> ERROR: extract_html: Couldn't detect page language."
-                return title, body_str, snippet, extended_snippet, cc, error
+                return title, body_str, snippet, cc, error
             if language not in app.config['LANGS']:
                 logging.error(f"\t>> ERROR: extract_html: language {language} is not supported. Moving to default language.")
                 language = app.config['LANGS'][0]
@@ -156,7 +155,4 @@ def extract_html(url):
             else:
                 snippet = ' '.join(body_str.split()[:snippet_length])
             
-            # For extended snippet: get large chunk of full body text
-            extended_snippet = body_str[:5000]
-
-    return title, body_str, language, snippet, extended_snippet, cc, error
+    return title, body_str, language, snippet, cc, error

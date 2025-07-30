@@ -72,7 +72,7 @@ def create_suggestion_in_db(url, pod, notes, contributor):
     db.session.add(s)
     db.session.commit()
 
-def create_or_replace_url_in_db(url, title, idv, snippet, extended_snippet, theme, lang, note, share, contributor, entry_type):
+def create_or_replace_url_in_db(url, title, idv, snippet, theme, lang, note, share, contributor, entry_type):
     """Add a new URL to the database or update it.
     Arguments: url, title, snippet, theme, language,
     note warning, username, type (url or doc).
@@ -86,7 +86,6 @@ def create_or_replace_url_in_db(url, title, idv, snippet, extended_snippet, them
     u.title = title
     u.vector = idv
     u.snippet = snippet
-    u.extended_snippet = extended_snippet
     u.pod = theme + '.l.' + lang + '.u.' + contributor
     u.language = lang
     u.share = share

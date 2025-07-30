@@ -56,13 +56,13 @@ def compute_vector(url, theme, contributor, url_type):
     messages = []
     print("CONTENT TYPE",url_type)
     if 'text/html' in url_type:
-        title, body_str, lang, snippet, extended_snippet, cc, error = extract_html(url)
+        title, body_str, lang, snippet, cc, error = extract_html(url)
     elif 'application/pdf' in url_type:
-        title, body_str, lang, snippet, extended_snippet, cc, error = extract_txt(url, contributor)
+        title, body_str, lang, snippet, cc, error = extract_txt(url, contributor)
     else:
         error = ">> INDEXER: MK_PAGE_VECTORS: ERROR: compute_vectors: No supported content type."
     if error is None:
-        logging.info(f"TITLE {title} SNIPPET {snippet} EXTENDED_SNIPPET {extended_snippet} CC {cc} ERROR {error}")
+        logging.info(f"TITLE {title} SNIPPET {snippet} CC {cc} ERROR {error}")
         create_pod_npz_pos(contributor, theme, lang)
         user_dir = join(pod_dir, contributor, lang)
         npz_path = join(user_dir,theme+'.l.'+lang+'.u.'+contributor+'.npz')
@@ -73,7 +73,7 @@ def compute_vector(url, theme, contributor, url_type):
         if success:
             save_npz(npz_path,pod_m)
             idv = pod_m.shape[0]-1
-            return True, tokenized_text, lang, title, snippet, extended_snippet, idv, messages
+            return True, tokenized_text, lang, title, snippet, idv, messages
     messages.append(">> INDEXER ERROR: compute_vectors: error during parsing")
     return False, None, None, None, None, None, None, messages
 
@@ -91,14 +91,13 @@ def compute_vector_local_docs(title, doc, theme, lang, contributor):
     pod_m, success = compute_and_stack_new_vec(lang, text, pod_m)
     if doc != "":
         snippet = doc[:500]+'...'
-        extended_snippet = doc[:1000]+'...'
     else:
-        snippet = extended_snippet = title
+        snippet = title
     if success:
         save_npz(npz_path,pod_m)
         vid = pod_m.shape[0]-1
-        return True, text, snippet, extended_snippet, vid
-    return False, text, snippet, extended_snippet, None
+        return True, text, snippet, vid
+    return False, text, snippet, None
 
 def compute_query_vectors(query, lang, expansion_length=None):
     """ Make query vectors: the vector for the original

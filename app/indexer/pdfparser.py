@@ -56,7 +56,6 @@ def extract_txt(url, contributor):
     title = ""
     body_str = ""
     snippet = ""
-    extended_snippet = ""
     cc = False
     language = app.config['LANGS'][0]
     error = None
@@ -69,7 +68,7 @@ def extract_txt(url, contributor):
             f_out.write(req.content)
     except Exception:
         print("ERROR accessing resource", url, "...")
-        return title, body_str, language, snippet, extended_snippet, cc, error
+        return title, body_str, language, snippet, cc, error
     
     try:
         body_str, title = pdf_mine(local_pdf_path)
@@ -81,7 +80,7 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, extended_snippet, cc, error
+        return title, body_str, language, snippet, cc, error
 
     if title == "":
         title = url.split('/')[-1]
@@ -96,7 +95,7 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, extended_snippet, cc, error
+        return title, body_str, language, snippet, cc, error
 
     if language not in installed_languages:
         error = "ERROR extract_html: language is not supported."
@@ -106,12 +105,11 @@ def extract_txt(url, contributor):
             remove(local_pdf_path.replace('.pdf','.txt'))
         except:
             pass
-        return title, body_str, language, snippet, extended_snippet, cc, error
+        return title, body_str, language, snippet, cc, error
     snippet = ' '.join(body_str.split()[:snippet_length])
-    extended_snippet = body_str[:5000]
     remove(local_pdf_path)
     try:
         remove(local_pdf_path.replace('.pdf','.txt'))
     except:
         pass
-    return title, body_str, language, snippet, extended_snippet, cc, error
+    return title, body_str, language, snippet, cc, error

@@ -9,10 +9,9 @@ def run_config(app):
     app.config['SINGLE_POD_NAME'] = getenv("SINGLE_POD_NAME", "global")
     app.config['LOCAL_FIRST_SEARCH'] = getenv("LOCAL_FIRST_SEARCH", "false") == "true"
     app.config['LOCAL_FIRST_REMOTE_KEYWORD'] = getenv("LOCAL_FIRST_REMOTE_KEYWORD", "federated")
-    app.config["EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] = getenv("EXTENDED_SNIPPETS_WHEN_LOGGED_IN", "false") == "true"
-    app.config["EXTENDED_SNIPPET_LENGTH"] = int(getenv("EXTENDED_SNIPPET_LENGTH", 50))
     app.config["ENABLE_POSIX"] = getenv("ENABLE_POSIX", "false") == "true"
-    app.config["POSIX_EXTENDED_SNIPPETS"] = getenv("POSIX_EXTENDED_SNIPPETS", "false") == "true"
+    app.config["POSIX_EXTENDED_SNIPPETS_WHEN_LOGGED_IN"] = getenv("POSIX_EXTENDED_SNIPPETS_WHEN_LOGGED_IN", "false") == "true"
+    app.config["POSIX_EXTENDED_SNIPPET_LENGTH"] = int(getenv("POSIX_EXTENDED_SNIPPET_LENGTH", 50))
 
     app.config['MAIL_DEFAULT_SENDER'] = getenv("MAIL_DEFAULT_SENDER")
     app.config['MAIL_SERVER'] = getenv("MAIL_SERVER")
