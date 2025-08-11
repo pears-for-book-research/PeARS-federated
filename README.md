@@ -4,14 +4,14 @@ SPDX-FileCopyrightText: 2023 PeARS Project, <community@pearsproject.org>
 SPDX-License-Identifier: AGPL-3.0-only
 -->
 
-# PeARS Federated
+# PeARS-for-book-research
 
 
 ## Important info
 
-*PeARS Federated* is a version of PeARS for federated use. Admins create PeARS instances that users can join to contribute to the index.
+*PeARS for book research* is a fork of PeARS-federated (https://github.com/PeARSearch/PeARS-federated/). 
 
-*PeARS Federated* is provided as-is. Before you use it, please check the rules of your country on crawling Web content and displaying snippets. And be a good netizen: do not overload people's servers while indexing!
+The software is provided as-is. Before you use it, please check the rules of your country on crawling Web content and displaying snippets. And be a good netizen: do not overload people's servers while indexing!
 
 
 ## Installation and Setup
@@ -21,7 +21,7 @@ We assume that you will first want to play with your installation locally. The f
 ##### 1. Clone this repo on your machine:
 
 ```
-    git clone https://github.com/PeARSearch/PeARS-federated.git
+    git clone https://github.com/pears-for-book-research/PeARS-federated.git
 ```
 
 ##### 2. **Optional step** Setup a virtualenv in your directory.
@@ -65,6 +65,8 @@ where you should replace lc with a language code of your choice. For now, we are
 ##### 5. Set up your configuration
 
 There is a .env template file at *.env-template* in the root directory of the repository. You should copy it to *.env* and fill in the information for your setup.
+
+The settings that are specific to PeARS-to-book-research as listed at the top of the .env-template file. 
 
 You should also create an admin user to run your PeARS. You can do so by using the following commands:
 
